@@ -14,6 +14,7 @@
     <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>
     <StartWebBrowser>False</StartWebBrowser>
     <Environment>staticRoutes=[{"root":"c:\\projects\\LA-Mobile\\www", "options": {}}]
+nodeRoutes=[{"root":"./admin","options": {}}]
 root="C:\\Users\\Kevin\\Node\\LA\\API"
 hostname=localhost
 port=8080</Environment>
@@ -21,6 +22,7 @@ port=8080</Environment>
   <PropertyGroup Condition="'$(Configuration)' == 'Debug'" />
   <PropertyGroup Condition="'$(Configuration)' == 'Release'" />
   <ItemGroup>
+    <Compile Include="admin\index.js" />
     <Compile Include="lib\Route.js" />
     <Compile Include="tests\watcher.js" />
     <Content Include="admin\index.html" />

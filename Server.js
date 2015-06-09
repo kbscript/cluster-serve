@@ -9,7 +9,7 @@ var favicon = require( 'serve-favicon' );
 var bodyparser = require( 'body-parser' );
 var compression = require( 'compression' );
 var cookieParser = require( 'cookie-parser' );
-var sersveStatic = require( 'serve-static' );
+var serveStatic = require( 'serve-static' );
 
 var log = function ( msg, error ) {
     console.log( (msg || error) + "\n" );
@@ -24,10 +24,13 @@ var Server = function () {
     server.killtimer = null;
     server.root = process.env.root || "";
     server.hostname = process.env.hostname;
-    try { server.static = JSON.parse( process.env.staticRoutes ); } catch ( err ) { console.log( err ); }
-    server.static = server.static || [{ root: Path.join( server.root, 'public' ), options: {} }];      
+    try { server.staticRoutes = JSON.parse( process.env.staticRoutes ); } catch ( err ) { console.log( err ); }
+    server.staticRoutes = server.staticRoutes || [{ root: Path.join( server.root, 'public' ), options: {} }];
+
+    try { server.nodeRoutes = JSON.parse( process.env.nodeRoutes ); } catch ( err ) { console.log( err ); }
+    server.nodeRoutes = server.nodeRoutes || [{ root: Path.join( server.root, 'public' ), options: {} }];    
     
-    var app = express( ), i;
+    var app = express( ), i, path;
     server.app = app;
     app.set( 'port', server.port );
     if ( process.env.favicon  ) { app.use( favicon( Path.resolve( process.env.favicon ) ) ); }
@@ -38,12 +41,16 @@ var Server = function () {
     app.use( server.cors );
     
     //add static routes
-    for ( i = 0; i < server.static.length; i++ ) { 
-        app.use( sersveStatic( server.static[i].root, server.static[i].options ) );
+    for ( i = 0; i < server.staticRoutes.length; i++ ) {
+        path = Path.resolve( server.staticRoutes[i].root );
+        app.use( serveStatic( path , server.staticRoutes[i].options ) );
     }
     
     //add data routes       
-    console.log( process.cwd() );
+    for ( i = 0; i < server.nodeRoutes.length; i++ ) { 
+        path = Path.resolve( server.staticRoutes[i].root );
+        app.use( serveStatic( path , server.staticRoutes[i].options ) ); 
+    }
 
     process.on( "message", function ( data ) {
         if ( data == "exit" ) { server.kill( ); }
