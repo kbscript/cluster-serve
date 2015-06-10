@@ -1,8 +1,6 @@
 ﻿var Path = require( 'path' );
 var Domain = require( 'domain' );
-var Util = require( 'util' );
 var fs = require( 'fs' );
-var debug = process.env.remote;
 
 var express = require( 'express' );
 var favicon = require( 'serve-favicon' );
@@ -10,30 +8,36 @@ var bodyparser = require( 'body-parser' );
 var compression = require( 'compression' );
 var cookieParser = require( 'cookie-parser' );
 var serveStatic = require( 'serve-static' );
+var Route = require("./lib/Route.js")
 
 var log = function ( msg, error ) {
     console.log( (msg || error) + "\n" );
-}
+};
 
 var Server = function () {
     var server = this;
                
     server.ssl = process.env.ssl || false;
     server.port = process.env.port || 443;
-    server.id = process.env.wid;
+    server.id = process.env.wid || 0;
     server.killtimer = null;
     server.root = process.env.root || "";
     server.hostname = process.env.hostname;
+    server.favicon = process.favicon || "";
+
+    //handles static routes for this server - env staticRoutes should be a json array.  [{root: "full path root of files to serve.", options: "see express server-static"}]
     try { server.staticRoutes = JSON.parse( process.env.staticRoutes ); } catch ( err ) { console.log( err ); }
     server.staticRoutes = server.staticRoutes || [{ root: Path.join( server.root, 'public' ), options: {} }];
 
+    //handles node routes using Router.js and swig for templates - env nodeRoutes should be json array.  [{root: "full path to root of node routes."}]
     try { server.nodeRoutes = JSON.parse( process.env.nodeRoutes ); } catch ( err ) { console.log( err ); }
-    server.nodeRoutes = server.nodeRoutes || [{ root: Path.join( server.root, 'public' ), options: {} }];    
+    server.nodeRoutes = server.nodeRoutes || [{ root: Path.join( server.root, 'public' ), options: {requestTimeout: 120000} }];
     
     var app = express( ), i, path;
     server.app = app;
     app.set( 'port', server.port );
-    if ( process.env.favicon  ) { app.use( favicon( Path.resolve( process.env.favicon ) ) ); }
+    if ( server.favicon  ) { app.use( favicon( Path.resolve( server.favicon ) ) ); }
+    //noinspection JSCheckFunctionSignatures
     app.use( bodyparser.json( ) );
     app.use( bodyparser.urlencoded( ) );
     app.use( compression( ) );
@@ -48,8 +52,9 @@ var Server = function () {
     
     //add data routes       
     for ( i = 0; i < server.nodeRoutes.length; i++ ) { 
-        path = Path.resolve( server.staticRoutes[i].root );
-        app.use( serveStatic( path , server.staticRoutes[i].options ) ); 
+        path = Path.resolve( server.nodeRoutes[i].root );
+        if (path) { server.nodeRoutes[path] = server.nodeRoutes[i];}
+        app.use( server.request.bind(server, server.nodeRoutes[i]) );
     }
 
     process.on( "message", function ( data ) {
@@ -57,6 +62,25 @@ var Server = function () {
     } );
 
     server.listen( );
+};
+
+Server.prototype.request = function (routeDef, request, response, next ) {
+    var server = this, domain = Domain.create();
+
+    request.params = String(request.url).split("?");
+    if (!request.params[0]) { return process.nextTick(next);}
+
+    domain.add(request);
+    domain.add(response);
+
+    domain.on("error", requestOnError.bind(server));
+    domain.on("close", requestOnClose.bind(server));
+
+    domain.run(function(){
+        var route = new Route(request, response, routeDef, next), killMsg = "Request Timeout:  " + request.originalUrl;
+
+        request.timeout = setTimeout(function () {server.kill(request,response, killMsg)}, route.routeDef.requestTimeout || 120000);
+    })
 };
 
 Server.prototype.cors = function ( request, response, next ) {
@@ -129,16 +153,16 @@ Server.prototype.listen = function () {
         exitProcess( );
     } );
     server.http.listen( server.port, server.hostname, 128, function () {
-        log( "Server " + server.hostname + " is listening on " + server.http.address( ).address + ", port: " + server.port + ".  Worker: " + process.env.wid + " Process: " + process.pid  );        
+        log( "Server " + server.hostname + " is listening on " + server.http.address( ).address + ", port: " + server.port + ".  Worker: " + server.id + " Process: " + process.pid  );
     } );            
-}
+};
 
 var exitProcess = function () { 
     setTimeout( function () { process.exit( ); }, 5000 );
 };
 
 Server.prototype.credentials = function () {
-    var server = this, constants = require('constants') , credentials, privateKey, certificate, gD1
+    var server = this, constants = require('constants') , credentials, privateKey, certificate, gD1;
     try { 
         privateKey = fs.readFileSync( '/etc/pki/tls/certs/' + server.hostname + '.key' ).toString( );
         certificate = fs.readFileSync( '/etc/pki/tls/certs/' + server.hostname + '.crt' ).toString( );
@@ -172,7 +196,7 @@ var requestOnError = function (error) {
     log( "Domain error stack: " + error.stack );
 
     server.kill( domain.members[0], domain.members[1], error );
-}
+};
 
 var requestOnClose = function (request, response) {
     var server = this;
