@@ -4,7 +4,7 @@ var fs = require( 'fs' );
 
 var express = require( 'express' );
 var favicon = require( 'serve-favicon' );
-var bodyparser = require( 'body-parser' );
+var bodyParser = require( 'body-parser' );
 var compression = require( 'compression' );
 var cookieParser = require( 'cookie-parser' );
 var serveStatic = require( 'serve-static' );
@@ -14,55 +14,62 @@ var log = function ( msg, error ) {
     console.log( (msg || error) + "\n" );
 };
 
+var _server;
 var Server = function () {
-    var server = this;
+    var server =  _server = this;
+    var app = express( ), i, path;
                
     server.ssl = process.env.ssl || false;
     server.port = process.env.port || 443;
     server.id = process.env.wid || 0;
     server.killtimer = null;
-    server.root = process.env.root || "";
+    server.workingDir = Path.resolve(process.env.workingDir || process.cwd());
     server.hostname = process.env.hostname;
     server.favicon = process.favicon || "";
 
     //handles static routes for this server - env staticRoutes should be a json array.  [{root: "full path root of files to serve.", options: "see express server-static"}]
     try { server.staticRoutes = JSON.parse( process.env.staticRoutes ); } catch ( err ) { console.log( err ); }
-    server.staticRoutes = server.staticRoutes || [{ root: Path.join( server.root, 'public' ), options: {} }];
+    server.staticRoutes = server.staticRoutes || [{ root: 'public', options: {} }];
 
     //handles node routes using Router.js and swig for templates - env nodeRoutes should be json array.  [{root: "full path to root of node routes."}]
     try { server.nodeRoutes = JSON.parse( process.env.nodeRoutes ); } catch ( err ) { console.log( err ); }
     server.nodeRoutes = server.nodeRoutes || [{ root: Path.join( server.root, 'public' ), options: {requestTimeout: 120000, dependency: "", workingDir: server.root} }];
-    
-    var app = express( ), i, path;
+
+    //set the working dir if we have one for this route.  Defaults to root passed in env
+    if (server.root) {process.chdir(server.root);}
+
     server.app = app;
     app.set( 'port', server.port );
     if ( server.favicon  ) { app.use( favicon( Path.resolve( server.favicon ) ) ); }
     //noinspection JSCheckFunctionSignatures
-    app.use( bodyparser.json( ) );
-    app.use( bodyparser.urlencoded( ) );
+    app.use( bodyParser.json( ) );
+    app.use( bodyParser.urlencoded( ) );
     app.use( compression( ) );
     app.use( cookieParser( ) );    
     app.use( server.cors );
     
     //add static routes
     for ( i = 0; i < server.staticRoutes.length; i++ ) {
-        path = Path.resolve( server.staticRoutes[i].root );
+        path = Path.resolve( Path.join(server.workingDir,server.staticRoutes[i].root) );
         app.use( serveStatic( path , server.staticRoutes[i].options ) );
     }
     
-    //add data routes       
+    //add data-template routes
     for ( i = 0; i < server.nodeRoutes.length; i++ ) { 
-        path = Path.resolve( server.nodeRoutes[i].root );
-        if (path) { server.nodeRoutes[path] = server.nodeRoutes[i];}
+        path = Path.resolve( Path.join(server.workingDir,server.nodeRoutes[i].root) );
+        if (!path) { continue; }
+        server.nodeRoutes[path] = server.nodeRoutes[i];
+        server.nodeRoutes[i].root = path;
+        server.nodeRoutes[i].options.dependency = Path.join(server.workingDir,server.nodeRoutes[i].options.dependency);
         app.use( server.request.bind(server, server.nodeRoutes[i]) );
     }
 
     process.on( "message", function ( data ) {
         if ( data == "exit" ) { server.kill( ); }
     } );
-
-    server.listen( );
 };
+
+Server.get = function(){ return _server; };
 
 Server.prototype.request = function (routeDef, request, response, next ) {
     var server = this, domain = Domain.create();
@@ -205,4 +212,4 @@ var requestOnClose = function (request, response) {
     request.domain.exit( );
 };
 
-module.exports = new Server( );
+module.exports = Server;

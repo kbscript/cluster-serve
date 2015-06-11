@@ -13,7 +13,7 @@ process.on( 'uncaughtException', function ( err ) {
     log( "", err.stack );
 } )
 
-//enumns
+//enums
 var Command = { exit: "exit", log: "log" };
 var Status = { stopped: "stopped", running: "running", closing: "closing", build: "build" };
 
@@ -30,7 +30,7 @@ var ClusterManager = function () {
     debug = ( typeof ( clustermanager.argv( "debug" ) || clustermanager.argv( "--debug" ) || clustermanager.argv( "--debug-brk" ) ) != "undefined" );
     remote = clustermanager.argv( "remote" ) ? "remote" : "";
     
-    cluster.setupMaster( { exec: Path.join(__dirname, "./Server.js"), args: [], silent: false } );
+    cluster.setupMaster( { exec: Path.join(__dirname, "./app.js"), args: [], silent: false } );
 
     var Watcher = require( Path.join( __dirname, './lib/Watcher' ) );
     var watcher = new Watcher( Path.resolve( __dirname ), function () {
