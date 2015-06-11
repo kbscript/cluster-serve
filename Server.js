@@ -31,7 +31,7 @@ var Server = function () {
 
     //handles node routes using Router.js and swig for templates - env nodeRoutes should be json array.  [{root: "full path to root of node routes."}]
     try { server.nodeRoutes = JSON.parse( process.env.nodeRoutes ); } catch ( err ) { console.log( err ); }
-    server.nodeRoutes = server.nodeRoutes || [{ root: Path.join( server.root, 'public' ), options: {requestTimeout: 120000} }];
+    server.nodeRoutes = server.nodeRoutes || [{ root: Path.join( server.root, 'public' ), options: {requestTimeout: 120000, dependency: "", workingDir: server.root} }];
     
     var app = express( ), i, path;
     server.app = app;
