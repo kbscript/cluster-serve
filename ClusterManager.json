@@ -1,7 +1,7 @@
 ﻿{
 	"servers": [		
 		{
-			"hostname" : "localhost", "rootDir": "/projects/LA-Mobile", "enabled" : true, "port" : 8080, "ssl" : false, "instances" : 1, "maxtime": 7200000, "killtime": 30000, "debug": true 
+			"hostname" : "localhost", "workingDir": "/projects/LA-Mobile", "enabled" : true, "port" : 8080, "ssl" : false, "instances" : 1, "maxtime": 7200000, "killtime": 30000, "debug": true
 		}
 	], 
 	"serverGlobal": {"maxtime": 3600000, "killTimeout": 30000}

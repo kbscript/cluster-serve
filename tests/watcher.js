@@ -46,7 +46,7 @@ describe('Start new recursive Watcher', function () {
                 throw new Error("No watch event called after file change to /watch-test/existing-file.txt");
             }, 100);
         })
-    })
+    });
 
     it('Should not get changed file event.', function  (done) {
         var timeout;
@@ -63,7 +63,7 @@ describe('Start new recursive Watcher', function () {
             timeout = setTimeout(function() {
                 if (done) {done(); done = undefined;}
             }, 100);
-        })
-    })
+        });
+    });
 
 });
