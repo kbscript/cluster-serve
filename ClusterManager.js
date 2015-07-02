@@ -11,7 +11,7 @@ var log = function ( msg, error ) {
 process.on( 'uncaughtException', function ( err ) {
     log( "" , err );
     log( "", err.stack );
-} )
+} );
 
 //enums
 var Command = { exit: "exit", log: "log" };
@@ -32,7 +32,7 @@ var ClusterManager = function () {
     
     cluster.setupMaster( { exec: Path.join(__dirname, "./app.js"), args: [], silent: false } );
 
-    var Watcher = require( Path.join( __dirname, './lib/Watcher' ) );
+    var Watcher = require( 'watch-dog');
     var watcher = new Watcher( Path.resolve( __dirname ), function () {
         log( "restarting from watcher. " );
         clustermanager.build( );
@@ -87,7 +87,7 @@ ClusterManager.prototype.build = function () {
         instances = def.instances || cpus;        
         for ( i = 0; i < instances; i++ ) { 
             server = new Server( { debugPort: debugPort + i, id: i, env: extend( {wid: i}, def) } );
-            clustermanager.servers[i] =  server;
+            clustermanager.servers[i] = server;
             setTimeout( function ( server ) {
                 worker( server );
                 var totalServers = clustermanager.servers.length - 1;
@@ -180,7 +180,7 @@ var worker = function ( server ) {
     cluster.settings.execArgv = argv;
     
     
-}
+};
 
 var Server = function ( options ) {
     var server = this;
@@ -232,6 +232,6 @@ var extend = function ( child, parent ) {
     }
 
     return child;
-}
+};
 
 module.exports = new ClusterManager( );

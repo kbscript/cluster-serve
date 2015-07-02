@@ -1,7 +1,16 @@
 ﻿{
 	"servers": [		
 		{
-			"hostname" : "localhost", "workingDir": "/projects/LA-Mobile", "enabled" : true, "port" : 8080, "ssl" : false, "instances" : 1, "maxtime": 7200000, "killtime": 30000, "debug": true
+		  "hostname" : "localhost",
+		  "root": "/projects/LA.API",
+		  "enabled" : true,
+		  "port" : 8080,
+		  "ssl" : false,
+		  "instances" : 1,
+		  "maxtime": 7200000,
+		  "killtime": 30000,
+		  "debug": true,
+		  "nodeRoutes": [{"root":"./routes", "options": {"requestTimeout": 120000,"dependency": "./lib/dependency.map.js"}}]
 		}
 	], 
 	"serverGlobal": {"maxtime": 3600000, "killTimeout": 30000}
