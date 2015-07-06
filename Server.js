@@ -8,6 +8,7 @@ var bodyParser = require( 'body-parser' );
 var compression = require( 'compression' );
 var cookieParser = require( 'cookie-parser' );
 var serveStatic = require( 'serve-static' );
+var Timeout = require('./lib/Timeout.js');
 var Route = require("./lib/Route.js")
 
 var log = function ( msg, error ) {
@@ -26,6 +27,7 @@ var Server = function () {
     server.workingDir = Path.resolve(process.env.workingDir || process.cwd());
     server.hostname = process.env.hostname;
     server.favicon = process.favicon || "";
+    server.requestTimeout = process.env.requestTimeout || 120000;
 
     //handles static routes for this server - env staticRoutes should be a json array.  [{root: "full path root of files to serve.", options: "see express server-static"}]
     try { server.staticRoutes = JSON.parse( process.env.staticRoutes ); } catch ( err ) { console.log( err ); }
@@ -33,7 +35,7 @@ var Server = function () {
 
     //handles node routes using Router.js and swig for templates - env nodeRoutes should be json array.  [{root: "full path to root of node routes."}]
     try { server.nodeRoutes = JSON.parse( process.env.nodeRoutes ); } catch ( err ) { console.log( err ); }
-    server.nodeRoutes = server.nodeRoutes || [{ root: "", options: {requestTimeout: 120000} }];
+    server.nodeRoutes = server.nodeRoutes || [{ root: "", options: {} }];
 
     //set the working dir if we have one for this route.  Defaults to root passed in env
     if (server.workingDir) {process.chdir(server.workingDir);}
@@ -47,6 +49,8 @@ var Server = function () {
     app.use( compression( ) );
     app.use( cookieParser( ) );    
     app.use( server.cors );
+    app.use( Timeout(server.requestTimout, server.kill.bind(server)));
+
     
     //add static routes
     for ( i = 0; i < server.staticRoutes.length; i++ ) {
