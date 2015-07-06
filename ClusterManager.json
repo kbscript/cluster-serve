@@ -2,7 +2,7 @@
 	"servers": [		
 		{
 		  "hostname" : "localhost",
-		  "root": "/projects/LA.API",
+		  "workingDir": "/users/Kevin/Node/LA/API",
 		  "enabled" : true,
 		  "port" : 8080,
 		  "ssl" : false,
@@ -10,7 +10,7 @@
 		  "maxtime": 7200000,
 		  "killtime": 30000,
 		  "debug": true,
-		  "nodeRoutes": [{"root":"./routes", "options": {"requestTimeout": 120000,"dependency": "./lib/dependency.map.js"}}]
+		  "nodeRoutes": [{"root":"./routes", "options": {"requestTimeout": 120000}]
 		}
 	], 
 	"serverGlobal": {"maxtime": 3600000, "killTimeout": 30000}

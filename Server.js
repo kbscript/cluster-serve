@@ -33,7 +33,7 @@ var Server = function () {
 
     //handles node routes using Router.js and swig for templates - env nodeRoutes should be json array.  [{root: "full path to root of node routes."}]
     try { server.nodeRoutes = JSON.parse( process.env.nodeRoutes ); } catch ( err ) { console.log( err ); }
-    server.nodeRoutes = server.nodeRoutes || [{ root: Path.join( server.root, 'routes' ), options: {requestTimeout: 120000, dependency: "", workingDir: server.workingDir} }];
+    server.nodeRoutes = server.nodeRoutes || [{ root: "", options: {requestTimeout: 120000} }];
 
     //set the working dir if we have one for this route.  Defaults to root passed in env
     if (server.workingDir) {process.chdir(server.workingDir);}
@@ -60,7 +60,6 @@ var Server = function () {
         if (!path) { continue; }
         server.nodeRoutes[path] = server.nodeRoutes[i];
         server.nodeRoutes[i].root = path;
-        server.nodeRoutes[i].options.dependency = Path.join(server.workingDir,server.nodeRoutes[i].options.dependency);
         app.use( server.request.bind(server, server.nodeRoutes[i]) );
     }
 
